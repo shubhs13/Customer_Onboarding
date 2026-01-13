@@ -1,0 +1,57 @@
+package com.example.customer_onboarding.controller;
+
+import com.example.customer_onboarding.audit.OnboardingAuditLog;
+import com.example.customer_onboarding.dto.CustomerOnboardingRequest;
+import com.example.customer_onboarding.entity.CustomerOnboarding;
+import com.example.customer_onboarding.service.CustomerOnboardingService;
+import com.example.customer_onboarding.workflow.UserRole;
+
+import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/v1/customer-onboarding") 
+public class CustomerOnboardingController {
+    private final CustomerOnboardingService service;
+
+    public CustomerOnboardingController(CustomerOnboardingService service){
+        this.service = service;
+    }
+
+    @PostMapping
+    public CustomerOnboarding create(
+        @Valid @RequestBody CustomerOnboardingRequest request){
+            return service.create(request);
+        }
+
+    @GetMapping
+    public List<CustomerOnboarding> getAll(){
+        return service.getAll();
+    }
+
+    @GetMapping("/{id}")
+    public CustomerOnboarding getById(@PathVariable Long id){
+        return service.getById(id);
+    }
+
+    @GetMapping("/{id}/audit-logs")
+    public List<OnboardingAuditLog> getAuditLogs(@PathVariable Long id) {
+        return service.getAuditLogsForCustomer(id);
+    }
+
+    @PostMapping("/{id}/approve")
+    public CustomerOnboarding approve(
+        @PathVariable Long id,
+        @RequestParam UserRole role){
+            return service.approve(id, role);
+        }
+    @PostMapping("/{id}/reject")
+    public CustomerOnboarding reject(
+        @PathVariable Long id,
+        @RequestParam UserRole role){
+            return service.reject(id, role);
+        }
+    
+}
