@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getOnboardings } from '../api/onboardingApi';
+import { approveOnboarding, getOnboardings, rejectOnboarding } from '../api/onboardingApi';
 import { NavigateFunction, useNavigate } from 'react-router-dom';
 import { UserRole } from '../api/onboardingApi';
 
@@ -8,27 +8,50 @@ interface Onboarding{
   fullName: string;
   email: string;
   phone: string;
-  status: string;
-  stage: string;
+  onboardingStatus: string;
+  currentStage: string;
   createdBy: UserRole;
 }
+
+
 
 const OnboardingList = () => {
   const navigate: (to: string) => void = useNavigate();
   const [onboardings, setOnboardings] = useState<Onboarding[]>([]);
   const [error, setError] = useState('');
 
-  useEffect(()=>{
-    async function fetchData(){
-      try{
-        const response = await getOnboardings();
-        setOnboardings(response.data);
-      } catch (err:any){
-        setError('Failed to fetch onboardings')
-      }
+  //mock role
+  const currentRole: UserRole = UserRole.OPS_USER
+  const fetchOnboardings = async function fetchData(){
+    try{
+      const response = await getOnboardings();
+      setOnboardings(response.data);
+    } catch (err:any){
+      setError('Failed to fetch onboardings')
     }
-    fetchData();
+  }
+  useEffect(()=>{
+    fetchOnboardings();
   },[]);
+
+  //Approve Handler
+  const handleApprove = async (customerId: number) => {
+    try {
+      await approveOnboarding(customerId, currentRole);
+      fetchOnboardings(); // refresh list
+    } catch (err: any) {
+      console.error(err);
+    }
+  };
+  
+  const handleReject = async (customerId: number) => {
+    try {
+      await rejectOnboarding(customerId, currentRole);
+      fetchOnboardings(); // refresh list
+    } catch (err: any) {
+      console.error(err);
+    }
+  };
 
   return (
     <div style= {{maxWidth: 800, margin: '2rem auto'}}>
@@ -53,11 +76,22 @@ const OnboardingList = () => {
                 <td>{o.fullName}</td>
                 <td>{o.email}</td>
                 <td>{o.phone}</td>
-                <td>{o.status}</td>
-                <td>{o.stage}</td>
+                <td>{o.onboardingStatus}</td>
+                <td>{o.currentStage}</td>
                 <td>
                   <button onClick={() => navigate(`/details/${o.customerId}`)}>View</button>
                   {/* Approve/Reject Button will com later */}
+                  <button 
+                    disabled={o.onboardingStatus !=='PENDING' ||
+                              currentRole !==UserRole.OPS_USER}
+                    onClick={() => handleApprove(o.customerId)}> Approve
+                  </button>
+                  <button 
+                    disabled={o.onboardingStatus !=='PENDING' || 
+                              currentRole !==UserRole.OPS_USER}
+                    onClick={() => handleReject(o.customerId)}> Reject
+                  </button>
+
                 </td>
               </tr>
             ))}
